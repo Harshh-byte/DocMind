@@ -19,7 +19,7 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://doc-mind-gamma.vercel.app/"),
-  title: "DocMind • Secure Document Intelligence Platform",
+  title: "DocMind • Secure Document Intelligence",
   description:
     "Upload PDFs, index semantic vectors, and chat with your documents. DocMind turns static files into active knowledge partners.",
   keywords: ["PDF AI", "document chat", "semantic search", "knowledge base", "learning studio", "ai mind map", "study tools"],
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     apple: "/favicon.png",
   },
   openGraph: {
-    title: "DocMind • Secure Document Intelligence Platform",
+    title: "DocMind • Secure Document Intelligence",
     description:
       "Upload PDFs, index semantic vectors, and chat with your documents. DocMind turns static files into active knowledge partners.",
     type: "website",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "DocMind • Secure Document Intelligence Platform",
+    title: "DocMind • Secure Document Intelligence",
     description:
       "Upload PDFs, index semantic vectors, and chat with your documents. DocMind turns static files into active knowledge partners.",
     creator: "@Harshh_hb",
@@ -61,6 +61,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "DocMind",
+    "url": "https://doc-mind-gamma.vercel.app/",
+  };
+
   return (
     <ClerkProvider>
       <html
@@ -68,6 +75,12 @@ export default function RootLayout({
         className={`${inter.variable} ${sora.variable} antialiased`}
         suppressHydrationWarning
       >
+        <head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+        </head>
         <body className="min-h-screen bg-background text-foreground select-none">
           <ClickSpark sparkColor="#4f46e5" sparkSize={5} sparkRadius={18} sparkCount={8} duration={350}>
             {children}
