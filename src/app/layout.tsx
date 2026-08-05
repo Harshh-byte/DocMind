@@ -18,7 +18,7 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://doc-mind-lake.vercel.app/"),
+  metadataBase: new URL("https://doc-mind-gamma.vercel.app/"),
   title: "DocMind • Secure Document Intelligence Platform",
   description:
     "Upload PDFs, index semantic vectors, and chat with your documents. DocMind turns static files into active knowledge partners.",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     description:
       "Upload PDFs, index semantic vectors, and chat with your documents. DocMind turns static files into active knowledge partners.",
     type: "website",
-    url: "https://doc-mind-lake.vercel.app/",
+    url: "https://doc-mind-gamma.vercel.app/",
     siteName: "DocMind",
     locale: "en_US",
     images: [
