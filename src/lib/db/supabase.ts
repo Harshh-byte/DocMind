@@ -10,15 +10,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const getSupabaseClient = (supabaseToken: string | null) => {
-  const options = supabaseToken
-    ? {
-        global: {
-          headers: {
-            Authorization: `Bearer ${supabaseToken}`,
-          },
-        },
-      }
-    : undefined;
-  return createClient(supabaseUrl, supabaseAnonKey, options);
+  if (!supabaseToken || !supabaseToken.trim()) {
+    return supabase;
+  }
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${supabaseToken}`,
+      },
+    },
+  });
 };
 

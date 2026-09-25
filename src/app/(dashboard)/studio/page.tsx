@@ -6,6 +6,13 @@ import {
   FileText,
   Loader2,
   Search,
+  WandSparkles,
+  Headphones,
+  Network,
+  BookOpen,
+  HelpCircle,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/db/supabase";
 import { useAuth } from "@clerk/nextjs";
@@ -84,13 +91,6 @@ const getDocumentIcon = (doc: Document) => {
     }
   }
 
-  for (const keyword of keywords) {
-    const capitalized = keyword.charAt(0).toUpperCase() + keyword.slice(1);
-    if ((Icons as any)[capitalized]) {
-      return (Icons as any)[capitalized];
-    }
-  }
-
   return getFileIcon(doc.name);
 };
 
@@ -136,7 +136,7 @@ export default function StudioPage() {
               text: d.text,
               summary: d.summary,
               tags: d.tags,
-            })),
+            }))
           );
         }
       } catch (err) {
@@ -147,58 +147,83 @@ export default function StudioPage() {
     };
 
     fetchDocuments();
-  }, [userId, isLoaded]);
+  }, [userId, isLoaded, getToken]);
 
   const filteredDocs = docs.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase()),
+    d.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4] flex relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] w-125 h-125 rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[20%] w-150 h-150 rounded-full bg-violet-400/4 blur-[130px] pointer-events-none" />
-
+    <div className="min-h-screen bg-[#faf8f5] text-foreground flex relative overflow-hidden font-sans">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col overflow-auto min-w-0 relative z-10">
-        <div className="p-4 md:p-8 max-w-4xl w-full mx-auto space-y-8 md:space-y-10 mt-14 md:mt-0">
-          <div className="border-b border-[#eae6df]/60 pb-6">
-            <h1 className="text-3xl md:text-4xl font-heading font-black leading-tight tracking-tight flex items-center gap-2">
-              <span className="shiny-text animate-shine text-primary">
-                Studio
-              </span>
+      <main className="flex-1 flex flex-col min-w-0 relative z-10 pb-10">
+        <div className="p-5 md:p-10 max-w-6xl w-full mx-auto space-y-8 mt-14 md:mt-0">
+          
+          {/* Header */}
+          <div className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-6 md:p-8 shadow-xs space-y-2">
+            <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-700 border border-violet-500/20 inline-flex items-center gap-1.5">
+              <WandSparkles className="w-3.5 h-3.5 text-violet-600" /> Multi-Modal AI Synthesis Suite
+            </span>
+            <h1 className="text-2xl md:text-4xl font-heading font-black tracking-tight text-foreground">
+              Studio Workspace
             </h1>
-            <p className="text-sm text-foreground/75 font-medium mt-1.5">
-              Select a document to generate advanced learning materials, interactive outline maps, and conversational podcasts.
+            <p className="text-sm text-foreground/70 font-medium">
+              Select a document to enter the AI Studio where podcasts, visual mind maps, flashcards, and quizzes are generated automatically.
             </p>
           </div>
 
+          {/* Studio Capabilities Banner */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            {[
+              { icon: Headphones, title: "AI Podcasts", desc: "Two-speaker audio summaries", color: "text-indigo-600", bg: "bg-indigo-50" },
+              { icon: Network, title: "Mind Maps", desc: "Interactive graph nodes", color: "text-violet-600", bg: "bg-violet-50" },
+              { icon: BookOpen, title: "Flashcards", desc: "3D interactive flip cards", color: "text-emerald-600", bg: "bg-emerald-50" },
+              { icon: HelpCircle, title: "Practice Quizzes", desc: "Scored Q&A practice tests", color: "text-amber-600", bg: "bg-amber-50" },
+            ].map((cap, i) => (
+              <div key={i} className="p-4 bg-[#ffffff] border border-[#e5e1da] rounded-2xl shadow-xs flex flex-col justify-between space-y-2">
+                <div className={`w-9 h-9 rounded-xl ${cap.bg} flex items-center justify-center ${cap.color}`}>
+                  <cap.icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-heading font-bold text-xs text-foreground">{cap.title}</h4>
+                  <p className="text-[10px] text-foreground/50 font-medium">{cap.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Search & Selector Grid */}
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
+            <div className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl p-4 shadow-xs">
+              <div className="flex items-center bg-[#faf8f5] border border-[#e5e1da] rounded-xl px-4 py-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all">
+                <Search className="h-4 w-4 text-foreground/40 shrink-0 mr-3" />
                 <input
                   type="text"
-                  placeholder="Search document library to load in Studio..."
+                  placeholder="Filter document library for Studio processing..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full text-sm bg-white border border-[#eae6df] rounded-2xl pl-11 pr-4 py-3 font-semibold text-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all shadow-xs"
+                  className="bg-transparent text-sm text-foreground placeholder:text-foreground/40 focus:outline-none w-full font-medium"
                 />
               </div>
             </div>
 
             {isLoadingDocs ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-28 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse" />
+                ))}
               </div>
             ) : filteredDocs.length === 0 ? (
-              <div className="text-center py-12 bg-white/40 border border-dashed border-[#eae6df] rounded-3xl p-8">
-                <FileText className="h-10 w-10 text-foreground/25 mx-auto mb-3" />
-                <h3 className="font-heading font-black text-foreground text-base">
-                  No Documents Loaded
+              <div className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-12 text-center max-w-md mx-auto space-y-4 shadow-xs">
+                <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto text-violet-600">
+                  <WandSparkles className="w-7 h-7" />
+                </div>
+                <h3 className="font-heading font-bold text-foreground text-lg">
+                  No Documents Ready for Studio
                 </h3>
-                <p className="text-xs text-foreground/50 font-medium mt-1">
-                  Upload a PDF in the Upload tab first to use Studio options.
+                <p className="text-xs text-foreground/60 font-medium">
+                  Upload a PDF document to generate audio podcasts and study sets.
                 </p>
               </div>
             ) : (
@@ -206,23 +231,31 @@ export default function StudioPage() {
                 {filteredDocs.map((doc) => {
                   const DocIcon = getDocumentIcon(doc);
                   return (
-                    <button
+                    <div
                       key={doc.id}
                       onClick={() => router.push(`/studio/${doc.id}`)}
-                      className="flex text-left items-start gap-4 p-5 bg-white border border-[#eae6df] rounded-3xl hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30 transition-all duration-300 group cursor-pointer"
+                      className="p-5 bg-[#ffffff] border border-[#e5e1da] rounded-2xl shadow-[0_2px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgba(139,92,246,0.1)] hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer flex items-center justify-between gap-4"
                     >
-                      <div className="h-10 w-10 rounded-2xl bg-primary/8 flex items-center justify-center text-primary group-hover:scale-105 transition-transform duration-300 shrink-0 shadow-inner">
-                        <DocIcon className="h-5 w-5" />
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center text-violet-600 group-hover:scale-105 transition-transform shrink-0">
+                          <DocIcon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-heading font-bold text-sm text-foreground truncate group-hover:text-violet-600 transition-colors">
+                            {doc.name}
+                          </h4>
+                          <p className="text-xs text-foreground/50 font-medium flex items-center gap-2 mt-0.5">
+                            <span>{doc.size}</span>
+                            <span>•</span>
+                            <span className="text-violet-600 font-bold">Studio Ready</span>
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-1 min-w-0">
-                        <h4 className="font-heading font-black text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                          {doc.name}
-                        </h4>
-                        <p className="text-xs text-foreground/45 font-semibold">
-                          Added on {doc.date}
-                        </p>
+
+                      <div className="w-9 h-9 rounded-xl bg-neutral-100 group-hover:bg-violet-600 group-hover:text-white text-foreground/50 flex items-center justify-center transition-all shrink-0">
+                        <ArrowRight className="w-4 h-4" />
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

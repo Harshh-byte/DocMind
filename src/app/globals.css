@@ -78,8 +78,8 @@
   --radius: 0.75rem;
 }
 
-html {
-  overflow-y: scroll;
+html,
+body {
   overflow-x: hidden;
 }
 

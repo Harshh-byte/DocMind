@@ -2,14 +2,27 @@
 
 import React, { useState, useRef, useEffect, Suspense, use } from "react";
 import { useRouter } from "next/navigation";
-import { Send, FileText, BotMessageSquare, X, Settings, Volume2, Loader2, ArrowLeft } from "lucide-react";
+import {
+  Send,
+  FileText,
+  BotMessageSquare,
+  X,
+  Settings,
+  Volume2,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react";
 import * as Icons from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@clerk/nextjs";
 import { getSupabaseClient } from "@/lib/db/supabase";
-import { GEMINI_MODEL_LITE, GEMINI_MODEL_FLASH, VOICES } from "@/lib/config/constants";
+import {
+  GEMINI_MODEL_LITE,
+  GEMINI_MODEL_FLASH,
+  VOICES,
+} from "@/lib/config/constants";
 import { cn, getFileIcon } from "@/lib/helpers/utils";
 import { toast } from "sonner";
 
@@ -52,14 +65,85 @@ const CitationBadge = ({
     const userQuery = msgIndex > 0 ? messages[msgIndex - 1].content : "";
 
     const stopWords = new Set([
-      "the", "a", "an", "and", "or", "but", "if", "then", "else", "when", "where",
-      "why", "how", "what", "who", "whom", "this", "that", "these", "those",
-      "is", "am", "are", "was", "were", "be", "been", "being", "have", "has",
-      "had", "do", "does", "did", "to", "from", "in", "on", "at", "by", "with",
-      "about", "for", "of", "off", "out", "over", "under", "again", "further",
-      "then", "once", "here", "there", "all", "any", "both", "each", "few",
-      "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own",
-      "same", "so", "than", "too", "very", "can", "will", "just", "should", "now"
+      "the",
+      "a",
+      "an",
+      "and",
+      "or",
+      "but",
+      "if",
+      "then",
+      "else",
+      "when",
+      "where",
+      "why",
+      "how",
+      "what",
+      "who",
+      "whom",
+      "this",
+      "that",
+      "these",
+      "those",
+      "is",
+      "am",
+      "are",
+      "was",
+      "were",
+      "be",
+      "been",
+      "being",
+      "have",
+      "has",
+      "had",
+      "do",
+      "does",
+      "did",
+      "to",
+      "from",
+      "in",
+      "on",
+      "at",
+      "by",
+      "with",
+      "about",
+      "for",
+      "of",
+      "off",
+      "out",
+      "over",
+      "under",
+      "again",
+      "further",
+      "then",
+      "once",
+      "here",
+      "there",
+      "all",
+      "any",
+      "both",
+      "each",
+      "few",
+      "more",
+      "most",
+      "other",
+      "some",
+      "such",
+      "no",
+      "nor",
+      "not",
+      "only",
+      "own",
+      "same",
+      "so",
+      "than",
+      "too",
+      "very",
+      "can",
+      "will",
+      "just",
+      "should",
+      "now",
     ]);
 
     const cleanText = (text: string) => {
@@ -72,7 +156,9 @@ const CitationBadge = ({
 
     const queryKeywords = cleanText(userQuery);
     const assistantKeywords = cleanText(assistantMsg);
-    const keywords = Array.from(new Set([...queryKeywords, ...assistantKeywords]));
+    const keywords = Array.from(
+      new Set([...queryKeywords, ...assistantKeywords]),
+    );
 
     const segments = pageContent
       .split(/\n+/)
@@ -93,8 +179,9 @@ const CitationBadge = ({
     const matches = scored.filter((s) => s.score > 0);
     matches.sort((a, b) => b.score - a.score);
 
-    const rawSnippet = matches.length > 0 ? matches[0].segment : pageContent.split("\n")[0];
-    
+    const rawSnippet =
+      matches.length > 0 ? matches[0].segment : pageContent.split("\n")[0];
+
     if (rawSnippet && rawSnippet.length > 140) {
       return rawSnippet.slice(0, 140) + "...";
     }
@@ -302,11 +389,14 @@ function ChatContent({ docId }: ChatContentProps) {
     messagesRef.current = messages;
   }, [messages]);
 
-  const handleVoiceMessageSave = async (role: "user" | "assistant", content: string) => {
+  const handleVoiceMessageSave = async (
+    role: "user" | "assistant",
+    content: string,
+  ) => {
     if (!userId || !docId) return;
     const newMsg: Message = { role, content };
     const updated = [...messagesRef.current, newMsg];
-    
+
     setMessages(updated);
 
     try {
@@ -380,7 +470,7 @@ function ChatContent({ docId }: ChatContentProps) {
 
       const audio = new Audio(url);
       previewAudioRef.current = audio;
-      
+
       audio.onplay = () => {
         setPreviewLoadingId(null);
         setPreviewPlayingId(voiceId);
@@ -471,14 +561,85 @@ function ChatContent({ docId }: ChatContentProps) {
     const userQuery = msgIndex > 0 ? messages[msgIndex - 1].content : "";
 
     const stopWords = new Set([
-      "the", "a", "an", "and", "or", "but", "if", "then", "else", "when", "where",
-      "why", "how", "what", "who", "whom", "this", "that", "these", "those",
-      "is", "am", "are", "was", "were", "be", "been", "being", "have", "has",
-      "had", "do", "does", "did", "to", "from", "in", "on", "at", "by", "with",
-      "about", "for", "of", "off", "out", "over", "under", "again", "further",
-      "then", "once", "here", "there", "all", "any", "both", "each", "few",
-      "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own",
-      "same", "so", "than", "too", "very", "can", "will", "just", "should", "now"
+      "the",
+      "a",
+      "an",
+      "and",
+      "or",
+      "but",
+      "if",
+      "then",
+      "else",
+      "when",
+      "where",
+      "why",
+      "how",
+      "what",
+      "who",
+      "whom",
+      "this",
+      "that",
+      "these",
+      "those",
+      "is",
+      "am",
+      "are",
+      "was",
+      "were",
+      "be",
+      "been",
+      "being",
+      "have",
+      "has",
+      "had",
+      "do",
+      "does",
+      "did",
+      "to",
+      "from",
+      "in",
+      "on",
+      "at",
+      "by",
+      "with",
+      "about",
+      "for",
+      "of",
+      "off",
+      "out",
+      "over",
+      "under",
+      "again",
+      "further",
+      "then",
+      "once",
+      "here",
+      "there",
+      "all",
+      "any",
+      "both",
+      "each",
+      "few",
+      "more",
+      "most",
+      "other",
+      "some",
+      "such",
+      "no",
+      "nor",
+      "not",
+      "only",
+      "own",
+      "same",
+      "so",
+      "than",
+      "too",
+      "very",
+      "can",
+      "will",
+      "just",
+      "should",
+      "now",
     ]);
 
     const cleanText = (text: string) => {
@@ -491,7 +652,9 @@ function ChatContent({ docId }: ChatContentProps) {
 
     const queryKeywords = cleanText(userQuery);
     const assistantKeywords = cleanText(assistantMsg);
-    const keywords = Array.from(new Set([...queryKeywords, ...assistantKeywords]));
+    const keywords = Array.from(
+      new Set([...queryKeywords, ...assistantKeywords]),
+    );
 
     setActiveCitation({
       citationText,
@@ -549,7 +712,7 @@ function ChatContent({ docId }: ChatContentProps) {
     const userMessageContent = input.trim();
     const newMsg: Message = { role: "user", content: userMessageContent };
     const updatedMessages = [...messages, newMsg];
-    
+
     setMessages(updatedMessages);
     setInput("");
     setIsTyping(true);
@@ -658,15 +821,12 @@ function ChatContent({ docId }: ChatContentProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4] flex relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] w-125 h-125 rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[20%] w-150 h-150 rounded-full bg-violet-400/4 blur-[130px] pointer-events-none" />
-
+    <div className="min-h-screen bg-[#faf8f5] text-foreground flex relative overflow-hidden font-sans">
       <Sidebar />
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative z-10">
         <div className="flex-1 flex flex-col min-h-0 bg-transparent relative">
-          <div className="shrink-0 bg-white/40 backdrop-blur-md border-b border-[#eae6df]/60 px-4 py-4 sm:px-8 flex items-center justify-between mt-14 md:mt-0">
+          <div className="shrink-0 bg-[#ffffff] border-b border-[#e5e1da] px-4 py-4 sm:px-8 flex items-center justify-between mt-14 md:mt-0 shadow-xs">
             <div className="flex items-center gap-3">
               <Button
                 onClick={() => router.push("/chat")}
@@ -691,7 +851,8 @@ function ChatContent({ docId }: ChatContentProps) {
                 onClick={() => setShowSettings(!showSettings)}
                 className={cn(
                   "h-9 w-9 rounded-xl border border-[#eae6df] bg-white text-foreground/60 hover:text-foreground cursor-pointer shadow-xs",
-                  showSettings && "border-primary/50 text-primary bg-primary/5 hover:bg-primary/5 hover:text-primary"
+                  showSettings &&
+                    "border-primary/50 text-primary bg-primary/5 hover:bg-primary/5 hover:text-primary",
                 )}
                 title="Workspace Settings"
               >
@@ -725,7 +886,12 @@ function ChatContent({ docId }: ChatContentProps) {
                         Document Assistant
                       </h3>
                       <p className="text-xs text-foreground/50 leading-relaxed font-semibold">
-                        Ask questions, request summaries, or locate details directly within <span className="text-primary font-bold">{docName}</span>.
+                        Ask questions, request summaries, or locate details
+                        directly within{" "}
+                        <span className="text-primary font-bold">
+                          {docName}
+                        </span>
+                        .
                       </p>
                     </div>
                   </div>
@@ -753,7 +919,8 @@ function ChatContent({ docId }: ChatContentProps) {
                         >
                           {formatMessage(
                             msg.content,
-                            (citeText) => handleCitationClick(citeText, msg.content),
+                            (citeText) =>
+                              handleCitationClick(citeText, msg.content),
                             resolvedDoc.text || "",
                             messages,
                           )}
@@ -857,37 +1024,53 @@ function ChatContent({ docId }: ChatContentProps) {
                         onClick={() => setModel(GEMINI_MODEL_LITE)}
                         className={cn(
                           "relative z-10 py-1.5 rounded-lg text-xs font-bold text-center transition-colors duration-200 cursor-pointer flex flex-col items-center justify-center",
-                          model === GEMINI_MODEL_LITE ? "text-primary" : "text-foreground/50 hover:text-foreground/80"
+                          model === GEMINI_MODEL_LITE
+                            ? "text-primary"
+                            : "text-foreground/50 hover:text-foreground/80",
                         )}
                       >
                         {model === GEMINI_MODEL_LITE && (
                           <motion.div
                             layoutId="activeModelTab"
                             className="absolute inset-0 bg-white border border-[#eae6df]/85 rounded-lg shadow-2xs -z-10"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 380,
+                              damping: 30,
+                            }}
                           />
                         )}
                         <span className="leading-none">Quick</span>
-                        <span className="text-[8px] opacity-75 font-medium leading-none mt-0.5">Research</span>
+                        <span className="text-[8px] opacity-75 font-medium leading-none mt-0.5">
+                          Research
+                        </span>
                       </button>
-                      
+
                       <button
                         type="button"
                         onClick={() => setModel(GEMINI_MODEL_FLASH)}
                         className={cn(
                           "relative z-10 py-1.5 rounded-lg text-xs font-bold text-center transition-colors duration-200 cursor-pointer flex flex-col items-center justify-center",
-                          model === GEMINI_MODEL_FLASH ? "text-primary" : "text-foreground/50 hover:text-foreground/80"
+                          model === GEMINI_MODEL_FLASH
+                            ? "text-primary"
+                            : "text-foreground/50 hover:text-foreground/80",
                         )}
                       >
                         {model === GEMINI_MODEL_FLASH && (
                           <motion.div
                             layoutId="activeModelTab"
                             className="absolute inset-0 bg-white border border-[#eae6df]/85 rounded-lg shadow-2xs -z-10"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 380,
+                              damping: 30,
+                            }}
                           />
                         )}
                         <span className="leading-none">Deep</span>
-                        <span className="text-[8px] opacity-75 font-medium leading-none mt-0.5">Research</span>
+                        <span className="text-[8px] opacity-75 font-medium leading-none mt-0.5">
+                          Research
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -909,12 +1092,16 @@ function ChatContent({ docId }: ChatContentProps) {
                             "w-full text-left px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex justify-between items-center",
                             voice === v.id
                               ? "border-primary bg-primary/5 text-primary shadow-2xs"
-                              : "border-[#eae6df]/85 bg-white text-foreground/75 hover:bg-slate-50"
+                              : "border-[#eae6df]/85 bg-white text-foreground/75 hover:bg-slate-50",
                           )}
                         >
                           <div className="flex flex-col min-w-0 pr-2">
-                            <span className="leading-normal truncate">{v.name}</span>
-                            <span className="text-[9px] text-foreground/40 font-semibold leading-none mt-0.5 truncate">{v.desc}</span>
+                            <span className="leading-normal truncate">
+                              {v.name}
+                            </span>
+                            <span className="text-[9px] text-foreground/40 font-semibold leading-none mt-0.5 truncate">
+                              {v.desc}
+                            </span>
                           </div>
                           <div className="shrink-0 flex items-center justify-center min-w-4">
                             {previewLoadingId === v.id ? (
@@ -981,7 +1168,11 @@ function ChatContent({ docId }: ChatContentProps) {
   );
 }
 
-export default function ChatDocumentPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ChatDocumentPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = use(params);
   return (
     <Suspense

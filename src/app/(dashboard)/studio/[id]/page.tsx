@@ -1080,10 +1080,7 @@ export default function StudioDocumentPage({ params }: PageProps) {
   if (!selectedDoc) return null;
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4] flex relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] w-125 h-125 rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[20%] w-150 h-150 rounded-full bg-violet-400/4 blur-[130px] pointer-events-none" />
-
+    <div className="min-h-screen bg-[#faf8f5] text-foreground flex relative overflow-hidden font-sans">
       <Sidebar />
 
       <main className="flex-1 flex flex-col overflow-auto min-w-0 relative z-10">

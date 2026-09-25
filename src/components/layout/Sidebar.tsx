@@ -1,123 +1,276 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
-import { WandSparkles, BotMessageSquare, Library, Menu, X, UploadCloud, ChevronLeft, ChevronRight, Vault } from "lucide-react";
+import { UserButton, useUser, useAuth } from "@clerk/nextjs";
+import {
+  WandSparkles,
+  BotMessageSquare,
+  Library,
+  Menu,
+  X,
+  UploadCloud,
+  ChevronLeft,
+  ChevronRight,
+  Vault,
+  HardDrive,
+  Home,
+} from "lucide-react";
 import { cn } from "@/lib/helpers/utils";
 import { Logo } from "@/components/ui/Logo";
+import { getSupabaseClient } from "@/lib/db/supabase";
 
 const navItems = [
   { href: "/dashboard", icon: Library, label: "Library" },
-  { href: "/upload", icon: UploadCloud, label: "Upload" },
+  { href: "/upload", icon: UploadCloud, label: "Upload & Synthesize" },
   { href: "/chat", icon: BotMessageSquare, label: "Chat Assistant" },
-  { href: "/documents", icon: Vault, label: "Vault" },
-  { href: "/studio", icon: WandSparkles, label: "Studio" },
+  { href: "/studio", icon: WandSparkles, label: "Studio Hub" },
+  { href: "/documents", icon: Vault, label: "Vault Storage" },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const { userId, isLoaded, getToken } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [usedBytes, setUsedBytes] = useState(0);
+
+  useEffect(() => {
+    if (!isLoaded || !userId) return;
+
+    const fetchStorageUsage = async () => {
+      try {
+        let token = null;
+        try {
+          token = await getToken({ template: "Supabase" });
+        } catch (authErr) {
+          console.warn("Clerk token error in sidebar:", authErr);
+        }
+        const supabaseClient = getSupabaseClient(token || "");
+        const { data } = await supabaseClient
+          .from("documents")
+          .select("raw_size")
+          .eq("user_id", userId);
+
+        if (data) {
+          const total = data.reduce(
+            (sum: number, doc: any) => sum + (doc.raw_size || 0),
+            0
+          );
+          setUsedBytes(total);
+        }
+      } catch (err) {
+        console.error("Failed to load storage status in sidebar:", err);
+      }
+    };
+
+    fetchStorageUsage();
+  }, [userId, isLoaded, getToken, pathname]);
+
+  const usedMB = (usedBytes / (1024 * 1024)).toFixed(1);
+  const percent = Math.min(
+    100,
+    Math.max(0, (usedBytes / (100 * 1024 * 1024)) * 100)
+  );
 
   const renderSidebarContent = (collapsed: boolean) => (
-    <>
-      <div className={cn("h-14 px-4 border-b border-[#eae6df] flex items-center justify-between md:h-auto md:p-6", collapsed && "p-4 justify-center")}>
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 select-none group"
-          onClick={() => setMobileOpen(false)}
-        >
-          <div className="relative">
-            <Logo className="h-9 w-9 group-hover:scale-105 transition-transform duration-300" />
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
-          </div>
-          {!collapsed && (
-            <span className="font-heading font-black text-xl tracking-tight text-foreground group-hover:text-primary transition-colors duration-200">
-              DocMind
-            </span>
+    <div className="flex flex-col h-full bg-[#f6f3ee] text-foreground select-none justify-between overflow-hidden">
+      {/* Top Section: Logo & Nav List */}
+      <div className="flex flex-col flex-1 min-h-0">
+        {/* Brand Header */}
+        <div
+          className={cn(
+            "h-16 px-5 border-b border-[#e5e1da] flex items-center justify-between shrink-0 bg-[#ffffff]",
+            collapsed && "px-3 justify-center"
           )}
-        </Link>
-        {!collapsed && (
-          <button
-            className="md:hidden p-2 rounded-xl hover:bg-black/5 text-foreground/60 transition-colors"
+        >
+          <Link
+            href="/"
+            className="flex items-center gap-3 group focus-visible:outline-none"
             onClick={() => setMobileOpen(false)}
           >
-            <X className="h-5 w-5" />
-          </button>
-        )}
+            <div className="relative shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-linear-to-br from-primary/10 to-violet-500/10 border border-primary/20 group-hover:scale-105 transition-all duration-300">
+              <Logo className="h-6 w-6" />
+            </div>
+            {!collapsed && (
+              <div className="flex flex-col">
+                <span className="font-heading font-black text-lg tracking-tight text-foreground group-hover:text-primary transition-colors">
+                  DocMind
+                </span>
+              </div>
+            )}
+          </Link>
+          {!collapsed && (
+            <button
+              className="md:hidden p-1.5 rounded-lg hover:bg-neutral-200/60 text-foreground/60 transition-colors"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close Sidebar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto px-3 py-5 space-y-1.5">
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const isActive =
+              pathname === href ||
+              (href !== "/" && pathname.startsWith(href + "/"));
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "group relative flex items-center transition-all duration-200 font-medium text-sm rounded-xl overflow-hidden",
+                  collapsed
+                    ? "justify-center w-11 h-11 mx-auto"
+                    : "gap-3 px-3.5 py-2.5",
+                  isActive
+                    ? "bg-white text-primary shadow-[0_2px_12px_rgba(79,70,229,0.08)] border border-primary/20 font-semibold"
+                    : "text-foreground/70 hover:text-foreground hover:bg-white/70 border border-transparent"
+                )}
+                title={collapsed ? label : undefined}
+              >
+                {isActive && (
+                  <div
+                    className={cn(
+                      "absolute bg-primary rounded-r-full transition-all",
+                      collapsed
+                        ? "left-0 top-2 bottom-2 w-1"
+                        : "left-0 top-2.5 bottom-2.5 w-1.5"
+                    )}
+                  />
+                )}
+                <Icon
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                    isActive
+                      ? "text-primary"
+                      : "text-foreground/50 group-hover:text-foreground/80"
+                  )}
+                />
+                {!collapsed && (
+                  <span className="flex-1 truncate">{label}</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
-      <nav className={cn("flex-1 px-4 py-6 space-y-1.5", collapsed && "px-2")}>
-        {navItems.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
-          return (
+      {/* Storage Meter & User Profile Footer */}
+      {!collapsed ? (
+        <div className="p-3 border-t border-[#e5e1da] bg-[#ffffff] space-y-3 shrink-0">
+          {/* Dynamic Storage Meter Card */}
+          <div className="p-3 rounded-xl bg-[#faf8f5] border border-[#e5e1da] space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-foreground/80 flex items-center gap-1.5">
+                <HardDrive className="w-3.5 h-3.5 text-primary" /> Cloud Storage
+              </span>
+              <span className="text-[11px] font-bold text-primary">Active</span>
+            </div>
+            <div className="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-linear-to-r from-primary to-violet-500 rounded-full transition-all duration-500"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <p className="text-[10px] text-foreground/55 font-medium flex justify-between">
+              <span>Vectorized Storage</span>
+              <span>
+                {usedBytes === 0 ? "0 MB" : `${usedMB} MB`} / 100 MB
+              </span>
+            </p>
+          </div>
+
+          {/* User Button Info */}
+          <div className="flex items-center justify-between px-2 py-1.5 rounded-xl hover:bg-neutral-100 transition-colors">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <UserButton />
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-foreground truncate">
+                  {user?.fullName || user?.firstName || "Account"}
+                </span>
+                <span className="text-[10px] text-foreground/50 truncate">
+                  {user?.primaryEmailAddress?.emailAddress || "Pro Plan"}
+                </span>
+              </div>
+            </div>
             <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                "group flex items-center transition-all duration-200 relative overflow-hidden",
-                collapsed
-                  ? "justify-center w-12 h-12 mx-auto rounded-2xl"
-                  : "gap-3.5 px-4 py-3 rounded-2xl text-sm font-medium",
-                isActive
-                  ? "bg-white text-primary shadow-[0_4px_20px_rgba(79,70,229,0.08)] border border-[#4f46e5]/10 font-semibold"
-                  : "text-foreground/65 hover:text-foreground hover:bg-white/50 border border-transparent"
-              )}
-              title={collapsed ? label : undefined}
+              href="/"
+              className="p-1.5 text-foreground/40 hover:text-primary transition-colors rounded-lg hover:bg-neutral-200/50"
+              title="Return Home"
             >
-              {isActive && (
-                <div className={cn("absolute bg-primary rounded-r-full", collapsed ? "left-0 top-2.5 bottom-2.5 w-1" : "left-0 top-3 bottom-3 w-1")} />
-              )}
-              <Icon className={cn("h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110", isActive ? "text-primary" : "text-foreground/45 group-hover:text-foreground/75")} />
-              {!collapsed && <span>{label}</span>}
+              <Home className="w-4 h-4" />
             </Link>
-          );
-        })}
-      </nav>
-    </>
+          </div>
+        </div>
+      ) : (
+        <div className="p-3 border-t border-[#e5e1da] bg-[#ffffff] flex flex-col items-center gap-3 shrink-0">
+          <UserButton />
+        </div>
+      )}
+    </div>
   );
 
   return (
     <>
-      <aside className={cn("hidden md:flex shrink-0 bg-[#f3efeb]/80 backdrop-blur-md border-r border-[#eae6df] flex-col min-h-screen sticky top-0 z-30 transition-all duration-300", isCollapsed ? "w-20" : "w-64")}>
-        <div className="absolute inset-0 bg-linear-to-b from-primary/1 to-transparent pointer-events-none" />
-        
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex shrink-0 bg-[#f6f3ee] border-r border-[#e5e1da] flex-col h-screen sticky top-0 z-30 transition-all duration-300 shadow-[2px_0_10px_rgba(0,0,0,0.02)]",
+          isCollapsed ? "w-20" : "w-64"
+        )}
+      >
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 bg-white border border-[#eae6df] rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all text-foreground/50 hover:text-foreground cursor-pointer z-50"
+          className="absolute -right-3.5 top-8 h-7 w-7 bg-white border border-[#e5e1da] rounded-full flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition-all text-foreground/60 hover:text-primary cursor-pointer z-50"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {isCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </button>
 
         {renderSidebarContent(isCollapsed)}
       </aside>
 
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#f3efeb]/90 backdrop-blur-md border-b border-[#eae6df] h-14 flex items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 select-none">
-          <Logo className="h-7 w-7" />
-          <span className="font-heading font-black text-base text-foreground">DocMind</span>
+      {/* Mobile Top Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#ffffff] border-b border-[#e5e1da] h-14 flex items-center justify-between px-4 shadow-xs">
+        <Link href="/" className="flex items-center gap-2.5 select-none">
+          <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+            <Logo className="h-5 w-5" />
+          </div>
+          <span className="font-heading font-black text-base text-foreground">
+            DocMind
+          </span>
         </Link>
         <div className="flex items-center gap-3">
           <UserButton />
           <button
-            className="p-2 rounded-xl hover:bg-black/5 text-foreground/70"
+            className="p-2 rounded-xl bg-neutral-100 text-foreground/70 hover:bg-neutral-200 transition-colors"
             onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation menu"
           >
             <Menu className="h-5 w-5" />
           </button>
         </div>
       </div>
 
+      {/* Mobile Drawer Overlay */}
       {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex justify-end">
+        <div className="md:hidden fixed inset-0 z-50 flex justify-start">
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+            className="absolute inset-0 bg-black/50 transition-opacity duration-300"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative w-72 bg-[#f9f7f4] h-full flex flex-col shadow-2xl z-10 border-l border-[#eae6df]">
+          <aside className="relative w-80 bg-[#f6f3ee] h-full flex flex-col shadow-2xl z-10 border-r border-[#e5e1da] overflow-hidden">
             {renderSidebarContent(false)}
           </aside>
         </div>

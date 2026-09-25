@@ -14,14 +14,25 @@ import {
   PlusCircle,
   Sparkles,
   BotMessageSquare,
+  WandSparkles,
+  Eye,
+  Grid,
+  List as ListIcon,
+  Tag,
+  ArrowUpRight,
+  ShieldCheck,
+  FileText,
+  Clock,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { motion, AnimatePresence } from "motion/react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { getSupabaseClient } from "@/lib/db/supabase";
 import { toast } from "sonner";
 import { getFileIcon } from "@/lib/helpers/utils";
+import { CountUp } from "@/components/ui/CountUp";
 
 interface Document {
   id: string;
@@ -37,11 +48,17 @@ interface Document {
 
 export default function DashboardPage() {
   const { userId, isLoaded, getToken } = useAuth();
+  const { user } = useUser();
   const [docs, setDocs] = useState<Document[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
-  const [deletingDoc, setDeletingDoc] = useState<{ id: string; name: string } | null>(null);
+  const [deletingDoc, setDeletingDoc] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isLoaded || !userId) return;
@@ -115,22 +132,22 @@ export default function DashboardPage() {
         .eq("user_id", userId);
 
       if (error) {
-        toast.error("Failed to delete document from cloud.", {
-          position: "top-center",
-        });
+        toast.error("Failed to delete document from cloud.");
         console.error(error);
       } else {
         setDocs((prev) => prev.filter((d) => d.id !== id));
         toast.custom(
           () => (
-            <div className="bg-white/95 backdrop-blur-md border border-[#eae6df] p-4 rounded-2xl shadow-xl flex items-center gap-3 w-80 max-w-sm">
+            <div className="bg-[#ffffff] border border-[#e5e1da] p-4 rounded-2xl shadow-xl flex items-center gap-3 w-80 max-w-sm text-foreground">
               <div className="h-9 w-9 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 shrink-0">
                 <CheckCircle className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-foreground">Deleted</p>
-                <p className="text-[10px] text-foreground/50 mt-0.5 leading-snug">
-                  Document and associated memory removed.
+                <p className="text-xs font-bold text-foreground">
+                  Document Removed
+                </p>
+                <p className="text-[10px] text-foreground/60 mt-0.5 leading-snug">
+                  Vectors and chat history deleted cleanly.
                 </p>
               </div>
             </div>
@@ -158,389 +175,610 @@ export default function DashboardPage() {
       ? (totalBytes / (1024 * 1024)).toFixed(1) + " MB"
       : (totalBytes / 1024).toFixed(0) + " KB";
 
-  const filteredDocs = docs.filter((doc) =>
-    doc.name.toLowerCase().includes(search.toLowerCase()),
+  // Derive unique tags
+  const allTags = Array.from(new Set(docs.flatMap((d) => d.tags || []))).filter(
+    Boolean,
   );
 
-  return (
-    <div className="min-h-screen bg-[#f9f7f4] flex relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-10%] w-125 h-125rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[20%] w-150 h-150 rounded-full bg-violet-400/4 blur-[130px] pointer-events-none" />
+  const filteredDocs = docs.filter((doc) => {
+    const matchesSearch = doc.name.toLowerCase().includes(search.toLowerCase());
+    const matchesTag =
+      selectedTag === "all" || (doc.tags && doc.tags.includes(selectedTag));
+    return matchesSearch && matchesTag;
+  });
 
+  return (
+    <div className="min-h-screen bg-[#faf8f5] text-foreground flex relative overflow-hidden font-sans">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col overflow-auto min-w-0 relative z-10">
-        <div className="p-4 md:p-8 max-w-5xl w-full mx-auto space-y-8 md:space-y-10 mt-14 md:mt-0">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#eae6df]/60 pb-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-heading font-black leading-tight tracking-tight">
-                <span className="shiny-text animate-shine text-violet-600">
-                  Document Library
-                </span>
-              </h1>
-              <p className="text-xs md:text-sm text-foreground/70 font-medium mt-1.5">
-                Manage your vectors, read executive AI summaries, or query
-                documents in real time.
-              </p>
-            </div>
+      <main className="flex-1 flex flex-col overflow-y-auto max-h-screen min-w-0 relative z-10">
+        <div className="p-5 md:p-10 max-w-7xl w-full mx-auto space-y-8 mt-14 md:mt-0">
+          {/* Top Hero Banner */}
+          <div className="bg-linear-to-r from-primary/10 via-violet-500/5 to-amber-500/5 border border-primary/15 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-[0_4px_25px_rgba(79,70,229,0.05)]">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <h1 className="text-2xl md:text-4xl font-heading font-black tracking-tight text-foreground">
+                  {"Welcome"},{" "}
+                  <span className="bg-linear-to-r from-primary to-violet-600 bg-clip-text text-transparent">
+                    {user?.firstName || "Scholar"}
+                  </span>
+                </h1>
+                <p className="text-sm text-foreground/70 font-medium max-w-xl">
+                  Transform static documents into active AI synthesis partners.
+                  Explore vectors, listen to podcasts, or initiate chat.
+                </p>
+              </div>
 
-            <Link href="/upload">
-              <Button className="rounded-2xl font-bold py-5 px-5 shadow-lg shadow-primary/15 hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] transition-all gap-2 text-xs cursor-pointer">
-                <PlusCircle className="h-4 w-4" />
-                <span>Upload New</span>
-              </Button>
-            </Link>
+              <div className="flex items-center gap-3 shrink-0">
+                <Link href="/upload">
+                  <Button className="rounded-2xl font-bold py-5 px-6 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all gap-2 text-xs cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90">
+                    <PlusCircle className="h-4 w-4" />
+                    <span>Upload & Parse</span>
+                  </Button>
+                </Link>
+                <Link href="/chat">
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl font-bold py-5 px-5 border-[#e5e1da] bg-white text-foreground hover:bg-neutral-50 shadow-xs hover:scale-[1.02] transition-all gap-2 text-xs"
+                  >
+                    <BotMessageSquare className="h-4 w-4 text-primary" />
+                    <span>Chat Hub</span>
+                  </Button>
+                </Link>
+              </div>
+            </div>
           </div>
 
+          {/* Key Metrics Overview Cards */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
           >
             {[
               {
                 label: "Total Documents",
-                value: isLoadingDocs ? "—" : totalDocs.toString(),
+                valNum: totalDocs,
+                suffix: "",
                 icon: Files,
                 color: "text-primary",
-                bg: "bg-primary/8",
+                bg: "bg-primary/10",
               },
               {
-                label: "Vectors Indexed",
-                value: isLoadingDocs ? "—" : totalVectors.toLocaleString(),
+                label: "Vector Embeddings",
+                valNum: totalVectors,
+                suffix: "",
                 icon: TrendingUp,
                 color: "text-emerald-600",
-                bg: "bg-emerald-500/8",
+                bg: "bg-emerald-500/10",
               },
               {
-                label: "Storage Used",
-                value: isLoadingDocs ? "—" : totalStorage,
+                label: "Storage Occupied",
+                valNum:
+                  totalBytes > 1024 * 1024
+                    ? parseFloat((totalBytes / (1024 * 1024)).toFixed(1))
+                    : parseFloat((totalBytes / 1024).toFixed(0)),
+                suffix: totalBytes > 1024 * 1024 ? " MB" : " KB",
                 icon: HardDrive,
                 color: "text-amber-600",
-                bg: "bg-amber-500/8",
+                bg: "bg-amber-500/10",
               },
-            ].map((stat) => (
+              {
+                label: "AI Studio Suites",
+                valNum: totalDocs > 0 ? totalDocs * 3 : 0,
+                suffix: " Assets",
+                icon: WandSparkles,
+                color: "text-violet-600",
+                bg: "bg-violet-500/10",
+              },
+            ].map((stat, idx) => (
               <div
-                key={stat.label}
-                className="bg-white/70 backdrop-blur-md border border-[#eae6df] rounded-2xl p-5 flex items-center gap-4 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
+                key={idx}
+                className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl p-5 flex flex-col justify-between shadow-[0_2px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_25px_rgba(79,70,229,0.08)] hover:-translate-y-0.5 transition-all duration-300 group"
               >
-                <div
-                  className={`h-11 w-11 rounded-2xl ${stat.bg} flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-300`}
-                >
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase tracking-wider text-foreground/45 font-bold truncate">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] uppercase tracking-wider text-foreground/50 font-bold font-heading">
                     {stat.label}
-                  </p>
-                  <p className="text-2xl font-heading font-black text-foreground mt-0.5">
-                    {stat.value}
-                  </p>
+                  </span>
+                  <div
+                    className={`h-9 w-9 rounded-xl ${stat.bg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-2xl md:text-3xl font-heading font-black text-foreground tracking-tight flex items-baseline gap-1">
+                    {isLoadingDocs ? (
+                      "—"
+                    ) : (
+                      <>
+                        <CountUp to={stat.valNum} duration={1.2} />
+                        <span className="text-sm font-semibold text-foreground/60">
+                          {stat.suffix}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </motion.div>
 
-          <div className="flex items-center bg-white/80 backdrop-blur-md border border-[#eae6df] rounded-2xl px-4 py-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/5 transition-all max-w-md shadow-xs">
-            <Search className="h-4 w-4 text-foreground/40 shrink-0" />
-            <input
-              type="text"
-              placeholder="Filter library by file name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="ml-3 bg-transparent text-xs md:text-sm focus:outline-none w-full text-foreground placeholder:text-foreground/35 font-medium"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="p-1 hover:bg-black/5 rounded-lg text-foreground/40 hover:text-foreground transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="bg-white border border-[#eae6df] rounded-3xl shadow-xs overflow-hidden"
-          >
-            <div className="flex items-center justify-between px-6 py-4.5 border-b border-[#eae6df]/60 bg-white/40 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading font-bold text-sm md:text-base text-foreground">
-                  Knowledge Repository
-                </h2>
-              </div>
-              <span className="text-[11px] font-bold text-primary bg-primary/8 px-3 py-1 rounded-full">
-                {filteredDocs.length}{" "}
-                {filteredDocs.length === 1 ? "file" : "files"}
-              </span>
-            </div>
-
-            <div className="divide-y divide-[#eae6df]/50">
-              {isLoadingDocs ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="p-6 flex items-center justify-between animate-pulse gap-4"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="h-10 w-10 bg-black/5 rounded-xl shrink-0" />
-                      <div className="space-y-2 flex-1 max-w-xs">
-                        <div className="h-3.5 bg-black/5 rounded-md w-3/4" />
-                        <div className="h-2.5 bg-black/5 rounded-md w-1/2" />
-                      </div>
-                    </div>
-                    <div className="h-8 w-20 bg-black/5 rounded-xl shrink-0" />
-                  </div>
-                ))
-              ) : filteredDocs.length > 0 ? (
-                <AnimatePresence initial={false}>
-                  {filteredDocs.map((doc) => (
-                    <motion.div
-                      key={doc.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex items-center justify-between px-6 py-4 hover:bg-[#f3efeb]/40 transition-colors group cursor-pointer"
-                      onClick={() => setSelectedDoc(doc)}
-                    >
-                      <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
-                        <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300 shrink-0 shadow-xs">
-                          {(() => {
-                            const FileIcon = getFileIcon(doc.name);
-                            return <FileIcon className="h-5 w-5" />;
-                          })()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-bold text-foreground truncate max-w-45 xs:max-w-[240px] sm:max-w-md group-hover:text-primary transition-colors duration-200">
-                            {doc.name}
-                          </p>
-                          <p className="text-[10px] sm:text-xs text-foreground/45 mt-0.5 font-medium">
-                            {doc.date}{" "}
-                            <span className="hidden sm:inline-block mx-1 text-foreground/20">
-                              •
-                            </span>{" "}
-                            <span className="hidden sm:inline-block text-foreground/50">
-                              {doc.vectors.toLocaleString()} vectors
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                        <Link
-                          href={`/chat?id=${encodeURIComponent(doc.id)}`}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs font-bold rounded-xl border-[#eae6df] hover:border-primary/40 hover:bg-primary hover:text-white px-3 py-2 cursor-pointer shadow-2xs transition-all duration-200 gap-1.5"
-                          >
-                            <BotMessageSquare className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Ask AI</span>
-                          </Button>
-                        </Link>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            promptDelete(doc.id, doc.name);
-                          }}
-                          className="text-foreground/25 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                          title="Delete document"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              ) : (
-                /* Empty State */
-                <div className="py-16 px-4 text-center space-y-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/5 text-primary flex items-center justify-center mx-auto">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-foreground">
-                      No documents found
-                    </h3>
-                    <p className="text-xs text-foreground/50 mt-1 max-w-xs mx-auto font-medium">
-                      {search
-                        ? "No document titles match your search criteria."
-                        : "Upload your first document to start indexing vectors."}
-                    </p>
-                  </div>
-                </div>
+          {/* Search, Filter Bar & View Toggle */}
+          <div className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            {/* Search Bar */}
+            <div className="flex items-center bg-[#faf8f5] border border-[#e5e1da] rounded-xl px-3.5 py-2.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all flex-1 max-w-lg">
+              <Search className="h-4 w-4 text-foreground/40 shrink-0 mr-2.5" />
+              <input
+                type="text"
+                placeholder="Search documents by filename or tag..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent text-sm text-foreground placeholder:text-foreground/40 focus:outline-none w-full font-medium"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="text-foreground/40 hover:text-foreground p-0.5 rounded-md"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               )}
             </div>
-          </motion.div>
+
+            {/* Filter Pills & View Mode Switcher */}
+            <div className="flex items-center justify-between md:justify-end gap-3 shrink-0">
+              {/* Category Filter Pills */}
+              {allTags.length > 0 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-xs sm:max-w-md no-scrollbar">
+                  <button
+                    onClick={() => setSelectedTag("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                      selectedTag === "all"
+                        ? "bg-primary text-white shadow-xs"
+                        : "bg-[#faf8f5] border border-[#e5e1da] text-foreground/70 hover:bg-neutral-100"
+                    }`}
+                  >
+                    All ({docs.length})
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => setSelectedTag(tag)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 capitalize cursor-pointer ${
+                        selectedTag === tag
+                          ? "bg-primary text-white shadow-xs"
+                          : "bg-[#faf8f5] border border-[#e5e1da] text-foreground/70 hover:bg-neutral-100"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Grid / Table Toggle */}
+              <div className="flex items-center bg-[#faf8f5] border border-[#e5e1da] rounded-xl p-1 shrink-0">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === "grid"
+                      ? "bg-white text-primary shadow-xs font-bold"
+                      : "text-foreground/40 hover:text-foreground"
+                  }`}
+                  title="Grid View"
+                >
+                  <Grid className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    viewMode === "table"
+                      ? "bg-white text-primary shadow-xs font-bold"
+                      : "text-foreground/40 hover:text-foreground"
+                  }`}
+                  title="List View"
+                >
+                  <ListIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Document Section Content */}
+          {isLoadingDocs ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="h-48 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse flex flex-col justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-neutral-200" />
+                    <div className="space-y-2 flex-1">
+                      <div className="h-4 bg-neutral-200 rounded-md w-3/4" />
+                      <div className="h-3 bg-neutral-200 rounded-md w-1/2" />
+                    </div>
+                  </div>
+                  <div className="h-8 bg-neutral-100 rounded-xl" />
+                </div>
+              ))}
+            </div>
+          ) : filteredDocs.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 shadow-xs"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto text-primary">
+                <Files className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-xl font-heading font-bold text-foreground">
+                  {search
+                    ? "No matching documents found"
+                    : "Your Library is Empty"}
+                </h3>
+                <p className="text-xs text-foreground/60 font-medium">
+                  {search
+                    ? `No document matched "${search}". Try searching another keyword or clear filters.`
+                    : "Upload your first PDF, TXT, or DOC file to generate AI vector embeddings and audio podcasts."}
+                </p>
+              </div>
+              {!search && (
+                <Link href="/upload" className="inline-block pt-2">
+                  <Button className="rounded-xl font-bold px-6 py-5 gap-2 bg-primary text-white shadow-md hover:bg-primary/90">
+                    <PlusCircle className="w-4 h-4" />
+                    Upload Document
+                  </Button>
+                </Link>
+              )}
+            </motion.div>
+          ) : viewMode === "grid" ? (
+            /* Grid View */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <AnimatePresence>
+                {filteredDocs.map((doc) => {
+                  const FileIconComp = getFileIcon(doc.name);
+                  return (
+                    <motion.div
+                      key={doc.id}
+                      layout
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl p-5 flex flex-col justify-between shadow-[0_2px_15px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(79,70,229,0.08)] hover:-translate-y-1 transition-all duration-300 relative group"
+                    >
+                      {/* Card Top */}
+                      <div className="space-y-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
+                              <FileIconComp className="h-5 w-5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3
+                                className="font-heading font-bold text-sm text-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                                title={doc.name}
+                                onClick={() => setSelectedDoc(doc)}
+                              >
+                                {doc.name}
+                              </h3>
+                              <p className="text-[11px] text-foreground/50 font-medium flex items-center gap-2 mt-0.5">
+                                <span>{doc.size}</span>
+                                <span>•</span>
+                                <span className="text-emerald-600 font-semibold">
+                                  {doc.vectors} vectors
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => promptDelete(doc.id, doc.name)}
+                            className="text-foreground/30 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                            title="Delete document"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Summary / Snippet */}
+                        {doc.summary ? (
+                          <p className="text-xs text-foreground/65 line-clamp-2 leading-relaxed bg-[#faf8f5] p-2.5 rounded-xl border border-[#e5e1da]">
+                            {doc.summary}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-foreground/45 italic bg-[#faf8f5] p-2.5 rounded-xl border border-[#e5e1da]">
+                            Parsed text with vector chunks ready for synthesis.
+                          </p>
+                        )}
+
+                        {/* Tags */}
+                        {doc.tags && doc.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {doc.tags.map((t, i) => (
+                              <span
+                                key={i}
+                                className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-neutral-100 text-foreground/60 border border-neutral-200/80 capitalize"
+                              >
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Bottom Actions */}
+                      <div className="pt-4 mt-4 border-t border-[#e5e1da] flex items-center justify-between gap-2">
+                        <button
+                          onClick={() => setSelectedDoc(doc)}
+                          className="px-3 py-1.5 text-xs font-semibold text-foreground/70 hover:text-foreground flex items-center gap-1.5 rounded-lg hover:bg-neutral-100 transition-colors cursor-pointer"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Inspect
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/chat/${doc.id}`}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl text-xs font-bold gap-1 border-[#e5e1da] hover:border-primary/40 hover:text-primary bg-white"
+                            >
+                              <BotMessageSquare className="h-3.5 w-3.5 text-primary" />
+                              Chat
+                            </Button>
+                          </Link>
+                          <Link href={`/studio/${doc.id}`}>
+                            <Button
+                              size="sm"
+                              className="rounded-xl text-xs font-bold gap-1 bg-violet-600 text-white hover:bg-violet-700 shadow-xs"
+                            >
+                              <WandSparkles className="h-3.5 w-3.5" />
+                              Studio
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
+          ) : (
+            /* Table View */
+            <div className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#faf8f5] border-b border-[#e5e1da] text-[11px] font-bold uppercase tracking-wider text-foreground/50 font-heading">
+                      <th className="py-3.5 px-5">Document Name</th>
+                      <th className="py-3.5 px-4">Size</th>
+                      <th className="py-3.5 px-4">Vectors</th>
+                      <th className="py-3.5 px-4">Date Uploaded</th>
+                      <th className="py-3.5 px-5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5e1da] text-xs font-medium">
+                    {filteredDocs.map((doc) => {
+                      const FileIconComp = getFileIcon(doc.name);
+                      return (
+                        <tr
+                          key={doc.id}
+                          className="hover:bg-[#faf8f5] transition-colors group"
+                        >
+                          <td className="py-4 px-5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                                <FileIconComp className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0">
+                                <p
+                                  className="font-bold text-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                                  onClick={() => setSelectedDoc(doc)}
+                                >
+                                  {doc.name}
+                                </p>
+                                <p className="text-[10px] text-foreground/45 line-clamp-1">
+                                  {doc.summary || "Ready for query"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-foreground/70 font-semibold">
+                            {doc.size}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200/60 text-[11px]">
+                              {doc.vectors} vec
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-foreground/50">
+                            {doc.date}
+                          </td>
+                          <td className="py-4 px-5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link href={`/chat/${doc.id}`}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="rounded-xl text-xs font-bold gap-1 border-[#e5e1da] bg-white"
+                                >
+                                  <BotMessageSquare className="h-3.5 w-3.5 text-primary" />
+                                  Chat
+                                </Button>
+                              </Link>
+                              <Link href={`/studio/${doc.id}`}>
+                                <Button
+                                  size="sm"
+                                  className="rounded-xl text-xs font-bold gap-1 bg-violet-600 text-white hover:bg-violet-700"
+                                >
+                                  <WandSparkles className="h-3.5 w-3.5" />
+                                  Studio
+                                </Button>
+                              </Link>
+                              <button
+                                onClick={() => promptDelete(doc.id, doc.name)}
+                                className="text-foreground/30 hover:text-red-500 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
+      {/* Quick Inspection Drawer / Modal */}
       <AnimatePresence>
         {selectedDoc && (
-          <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedDoc(null)}
-              className="absolute inset-0 bg-black/30 backdrop-blur-xs"
-            />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 22, stiffness: 180 }}
-              className="relative w-full max-w-md md:max-w-lg bg-white border-l border-[#eae6df] h-full shadow-2xl flex flex-col z-10"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden"
             >
-              <div className="p-6 border-b border-[#eae6df] flex items-center justify-between bg-zinc-50/50">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-xs shrink-0">
-                    {(() => {
-                      const SelectedFileIcon = getFileIcon(selectedDoc.name);
-                      return <SelectedFileIcon className="h-5 w-5" />;
-                    })()}
+              {/* Modal Header */}
+              <div className="p-6 border-b border-[#e5e1da] flex items-center justify-between bg-[#faf8f5]">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                    <FileText className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-heading font-black text-foreground text-sm md:text-base truncate">
+                    <h3 className="font-heading font-black text-lg text-foreground truncate">
                       {selectedDoc.name}
                     </h3>
-                    <p className="text-[10px] text-foreground/40 font-bold uppercase tracking-wider mt-0.5">
-                      Document Insights
+                    <p className="text-xs text-foreground/50 font-medium">
+                      {selectedDoc.size} • {selectedDoc.vectors} Vector
+                      Embeddings
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setSelectedDoc(null)}
-                  className="p-1.5 rounded-xl hover:bg-black/5 text-foreground/40 hover:text-foreground transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-neutral-200/60 transition-colors"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 rounded-2xl bg-[#f9f7f4] border border-[#eae6df]/60">
-                    <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-wider block">
-                      File Size
-                    </span>
-                    <span className="text-xs md:text-sm font-bold text-foreground block mt-1">
-                      {selectedDoc.size}
-                    </span>
+              {/* Modal Content Body */}
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+                {selectedDoc.summary && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-primary font-heading flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5" /> Executive Summary
+                    </h4>
+                    <div className="p-4 rounded-2xl bg-[#faf8f5] border border-[#e5e1da] text-foreground/80 leading-relaxed font-medium">
+                      {selectedDoc.summary}
+                    </div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-[#f9f7f4] border border-[#eae6df]/60">
-                    <span className="text-[9px] font-bold text-foreground/40 uppercase tracking-wider block">
-                      Vectors Indexed
-                    </span>
-                    <span className="text-xs md:text-sm font-bold text-foreground block mt-1">
-                      {selectedDoc.vectors.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
+                )}
 
-                <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-foreground/45 uppercase tracking-wider">
-                    Classifications
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selectedDoc.tags && selectedDoc.tags.length > 0 ? (
-                      selectedDoc.tags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] md:text-xs font-bold text-primary bg-primary/8 border border-primary/10 px-2.5 py-1 rounded-xl"
-                        >
-                          {tag}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-[10px] md:text-xs font-bold text-foreground/40 bg-zinc-100 px-2.5 py-1 rounded-xl">
-                        General
-                      </span>
-                    )}
+                {selectedDoc.text && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/60 font-heading">
+                      Extracted Text Preview
+                    </h4>
+                    <div className="p-4 rounded-2xl bg-neutral-900 text-neutral-200 font-mono text-xs max-h-48 overflow-y-auto leading-relaxed">
+                      {selectedDoc.text.slice(0, 1000)}
+                      {selectedDoc.text.length > 1000 && "..."}
+                    </div>
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="text-[10px] font-bold text-foreground/45 uppercase tracking-wider">
-                    Executive Summary
-                  </h4>
-                  <div className="p-5 rounded-2xl bg-primary/4 border border-primary/10 text-xs md:text-sm text-foreground/80 leading-relaxed font-medium shadow-2xs">
-                    {selectedDoc.summary ||
-                      "No summary available for this file."}
-                  </div>
-                </div>
+                )}
               </div>
 
-              <div className="p-6 border-t border-[#eae6df] bg-zinc-50/50 flex gap-3">
-                <Link
-                  href={`/chat?id=${encodeURIComponent(selectedDoc.id)}`}
-                  className="flex-1"
-                  onClick={() => setSelectedDoc(null)}
+              {/* Modal Footer Actions */}
+              <div className="p-5 border-t border-[#e5e1da] bg-[#faf8f5] flex items-center justify-between">
+                <button
+                  onClick={() => promptDelete(selectedDoc.id, selectedDoc.name)}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
                 >
-                  <Button className="w-full rounded-xl py-5 text-xs md:text-sm font-bold shadow-md shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer">
-                    <BotMessageSquare className="h-4 w-4" />
-                    <span>Open in Chat</span>
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    promptDelete(selectedDoc.id, selectedDoc.name);
-                    setSelectedDoc(null);
-                  }}
-                  className="rounded-xl border-red-200 hover:border-red-400 hover:bg-red-50 text-red-600 px-4 shrink-0 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                  <Trash2 className="w-4 h-4" /> Delete Document
+                </button>
+                <div className="flex items-center gap-3">
+                  <Link href={`/chat/${selectedDoc.id}`}>
+                    <Button
+                      variant="outline"
+                      className="rounded-xl font-bold text-xs gap-1.5 border-[#e5e1da] bg-white"
+                    >
+                      <BotMessageSquare className="w-4 h-4 text-primary" />{" "}
+                      Start Chat
+                    </Button>
+                  </Link>
+                  <Link href={`/studio/${selectedDoc.id}`}>
+                    <Button className="rounded-xl font-bold text-xs gap-1.5 bg-violet-600 hover:bg-violet-700 text-white">
+                      <WandSparkles className="w-4 h-4" /> Studio Hub
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
+      {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deletingDoc && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white border border-[#eae6df] rounded-3xl p-6 shadow-2xl max-w-sm w-full space-y-6 relative overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl"
             >
-              <div className="flex gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600 shrink-0">
-                  <AlertTriangle className="h-6 w-6" />
+              <div className="flex items-center gap-3 text-red-600">
+                <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-6 h-6" />
                 </div>
-                <div className="space-y-1.5 min-w-0">
-                  <h4 className="font-heading font-black text-base text-foreground">Confirm Deletion</h4>
-                  <p className="text-xs font-semibold text-foreground/50 leading-relaxed wrap-break-word">
-                    Are you sure you want to permanently delete <span className="font-black text-foreground">"{deletingDoc.name}"</span>? This will erase all vectorized data and chat history.
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-foreground">
+                    Confirm Document Deletion
+                  </h3>
+                  <p className="text-xs text-foreground/60 font-medium">
+                    This action cannot be undone.
                   </p>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    handleDelete(deletingDoc.id);
-                    setDeletingDoc(null);
-                  }}
-                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-red-500/10 active:scale-95 text-center"
-                >
-                  Yes, Delete
-                </button>
-                <button
+              <p className="text-sm text-foreground/70 font-medium bg-[#faf8f5] p-3.5 rounded-xl border border-[#e5e1da]">
+                Are you sure you want to permanently delete{" "}
+                <strong className="text-foreground">
+                  "{deletingDoc.name}"
+                </strong>{" "}
+                along with all associated vector embeddings and chat history?
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <Button
+                  variant="outline"
                   onClick={() => setDeletingDoc(null)}
-                  className="flex-1 px-4 py-3 bg-white border border-[#eae6df] hover:bg-slate-50 text-foreground rounded-2xl text-xs font-bold transition-all cursor-pointer active:scale-95 text-center"
+                  className="rounded-xl font-bold text-xs border-[#e5e1da] bg-white"
                 >
                   Cancel
-                </button>
+                </Button>
+                <Button
+                  onClick={() => {
+                    const id = deletingDoc.id;
+                    setDeletingDoc(null);
+                    handleDelete(id);
+                  }}
+                  className="rounded-xl font-bold text-xs bg-red-600 hover:bg-red-700 text-white shadow-xs"
+                >
+                  Confirm Delete
+                </Button>
               </div>
             </motion.div>
           </div>
