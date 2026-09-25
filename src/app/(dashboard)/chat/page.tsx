@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Loader2, Search, BotMessageSquare, Sparkles, ArrowRight, Zap } from "lucide-react";
+import {
+  Search,
+  BotMessageSquare,
+  ArrowRight,
+} from "lucide-react";
 import * as Icons from "lucide-react";
 import { getSupabaseClient } from "@/lib/db/supabase";
 import { useAuth } from "@clerk/nextjs";
 import { getFileIcon } from "@/lib/helpers/utils";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 
 interface Document {
   id: string;
@@ -106,12 +109,16 @@ export default function ChatPage() {
         const { data, error } = await supabaseClient
           .from("documents")
           .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+          .eq("user_id", userId);
 
         if (error) {
-          console.error("Failed to load documents:", error);
-          toast.error("Failed to load documents.");
+          console.warn("Documents fetch info:", error);
+          if (
+            error.message &&
+            !error.message.toLowerCase().includes("failed to fetch")
+          ) {
+            toast.error(error.message);
+          }
         } else if (data) {
           setDocs(
             data.map((d: any) => ({
@@ -123,7 +130,7 @@ export default function ChatPage() {
               rawSize: d.raw_size,
               text: d.text,
               summary: d.summary,
-            }))
+            })),
           );
         }
       } catch (err) {
@@ -137,7 +144,7 @@ export default function ChatPage() {
   }, [userId, isLoaded, getToken]);
 
   const filteredDocs = docs.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase())
+    d.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -146,17 +153,18 @@ export default function ChatPage() {
 
       <main className="flex-1 flex flex-col min-w-0 relative z-10 pb-10">
         <div className="p-5 md:p-10 max-w-5xl w-full mx-auto space-y-8 mt-14 md:mt-0">
-          
           {/* Header */}
           <div className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-6 md:p-8 shadow-xs space-y-2">
             <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-primary/10 text-primary border border-primary/20 inline-flex items-center gap-1.5">
-              <BotMessageSquare className="w-3.5 h-3.5 text-primary" /> RAG Conversational Engine
+              <BotMessageSquare className="w-3.5 h-3.5 text-primary" /> RAG
+              Conversational Engine
             </span>
             <h1 className="text-2xl md:text-4xl font-heading font-black tracking-tight text-foreground">
               Chat Assistant Selector
             </h1>
             <p className="text-sm text-foreground/70 font-medium">
-              Select any document in your library to start an interactive streaming AI session with page-level citations.
+              Select any document in your library to start an interactive
+              streaming AI session with page-level citations.
             </p>
           </div>
 
@@ -179,7 +187,10 @@ export default function ChatPage() {
             {isLoadingDocs ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-28 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-28 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse"
+                  />
                 ))}
               </div>
             ) : filteredDocs.length === 0 ? (
@@ -215,7 +226,9 @@ export default function ChatPage() {
                           <p className="text-xs text-foreground/50 font-medium flex items-center gap-2 mt-0.5">
                             <span>{doc.size}</span>
                             <span>•</span>
-                            <span className="text-emerald-600 font-bold">{doc.vectors} vectors</span>
+                            <span className="text-emerald-600 font-bold">
+                              {doc.vectors} vectors
+                            </span>
                           </p>
                         </div>
                       </div>

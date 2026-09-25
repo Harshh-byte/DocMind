@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -12,18 +12,13 @@ import {
   AlertTriangle,
   CheckCircle,
   PlusCircle,
-  Sparkles,
   BotMessageSquare,
   WandSparkles,
   Eye,
   Grid,
   List as ListIcon,
-  Tag,
-  ArrowUpRight,
-  ShieldCheck,
   FileText,
-  Clock,
-  Zap,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -77,12 +72,13 @@ export default function DashboardPage() {
         const { data, error } = await supabaseClient
           .from("documents")
           .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+          .eq("user_id", userId);
 
         if (error) {
-          console.error("Failed to load documents:", error);
-          toast.error("Failed to load document library.");
+          console.warn("Documents fetch info:", error);
+          if (error.message && !error.message.toLowerCase().includes("failed to fetch")) {
+            toast.error(error.message);
+          }
         } else if (data) {
           setDocs(
             data.map((d: any) => ({

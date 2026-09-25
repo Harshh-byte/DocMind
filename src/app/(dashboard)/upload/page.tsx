@@ -4,27 +4,22 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   UploadCloud,
-  FileUp,
   Trash2,
   Volume2,
   Loader2,
   CheckCircle,
-  Sparkles,
   ArrowRight,
   FileText,
-  Radio,
   Zap,
-  ShieldCheck,
   Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { extractTextFromFile } from "@/lib/document/pdfParser";
 import { toast } from "sonner";
 import { useAuth } from "@clerk/nextjs";
 import { getSupabaseClient } from "@/lib/db/supabase";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { getFileIcon } from "@/lib/helpers/utils";
 
 type UploadStage = "extracting" | "summarizing" | "saving" | "idle";
 
@@ -137,7 +132,7 @@ export default function UploadPage() {
         setPreviewLoadingId(null);
       }
     },
-    []
+    [],
   );
 
   const handleSelectVoice = (voiceId: string, voiceName: string) => {
@@ -281,7 +276,7 @@ export default function UploadPage() {
 
       if (dbError) {
         throw new Error(
-          `DB Error [${dbError.code || "N/A"}]: ${dbError.message}`
+          `DB Error [${dbError.code || "N/A"}]: ${dbError.message}`,
         );
       }
 
@@ -297,9 +292,21 @@ export default function UploadPage() {
   };
 
   const stagesInfo = [
-    { key: "extracting", title: "Text Extraction", desc: "Parsing PDF structure into text stream" },
-    { key: "summarizing", title: "AI Vectorization", desc: "Generating embeddings & AI summary" },
-    { key: "saving", title: "Vault Storage", desc: "Storing vectors securely in cloud database" },
+    {
+      key: "extracting",
+      title: "Text Extraction",
+      desc: "Parsing PDF structure into text stream",
+    },
+    {
+      key: "summarizing",
+      title: "AI Vectorization",
+      desc: "Generating embeddings & AI summary",
+    },
+    {
+      key: "saving",
+      title: "Vault Storage",
+      desc: "Storing vectors securely in cloud database",
+    },
   ];
 
   return (
@@ -308,22 +315,22 @@ export default function UploadPage() {
 
       <main className="flex-1 flex flex-col min-w-0 relative z-10 pb-10">
         <div className="p-5 md:p-10 max-w-4xl w-full mx-auto space-y-8 mt-14 md:mt-0">
-          
           {/* Header */}
           <div className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-6 md:p-8 shadow-xs space-y-2">
             <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-primary/10 text-primary border border-primary/20 inline-flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-primary animate-pulse" /> Document Ingestion Pipeline
+              <Zap className="w-3 h-3 text-primary animate-pulse" /> Document
+              Ingestion Pipeline
             </span>
             <h1 className="text-2xl md:text-4xl font-heading font-black tracking-tight text-foreground">
               Upload & Vectorize Document
             </h1>
             <p className="text-sm text-foreground/70 font-medium">
-              Upload your PDF to extract semantic vectors, generate executive summaries, and enable instant AI audio podcasts.
+              Upload your PDF to extract semantic vectors, generate executive
+              summaries, and enable instant AI audio podcasts.
             </p>
           </div>
 
           <form onSubmit={handleUpload} className="space-y-6">
-            
             {/* File Dropzone Card */}
             <div
               onDragEnter={handleDrag}
@@ -337,8 +344,8 @@ export default function UploadPage() {
                 isDragActive
                   ? "border-primary bg-primary/5 scale-[1.01]"
                   : file
-                  ? "border-emerald-500/60 bg-emerald-500/5"
-                  : "border-[#e5e1da] hover:border-primary/50 hover:bg-[#faf8f5]"
+                    ? "border-emerald-500/60 bg-emerald-500/5"
+                    : "border-[#e5e1da] hover:border-primary/50 hover:bg-[#faf8f5]"
               }`}
             >
               <input
@@ -377,7 +384,8 @@ export default function UploadPage() {
                         {file.name}
                       </p>
                       <p className="text-xs text-foreground/50 font-medium">
-                        {(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for processing
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB • Ready for
+                        processing
                       </p>
                     </div>
                   </div>
@@ -422,10 +430,12 @@ export default function UploadPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-xs font-bold uppercase tracking-wider text-foreground/70 font-heading flex items-center gap-2">
-                        <Headphones className="w-4 h-4 text-primary" /> Select AI Podcast Voice Persona
+                        <Headphones className="w-4 h-4 text-primary" /> Select
+                        AI Podcast Voice Persona
                       </h3>
                       <p className="text-xs text-foreground/50 font-medium mt-0.5">
-                        Choose the voice that will host your audio podcast summaries.
+                        Choose the voice that will host your audio podcast
+                        summaries.
                       </p>
                     </div>
                   </div>
@@ -439,7 +449,9 @@ export default function UploadPage() {
                       return (
                         <div
                           key={voice.id}
-                          onClick={() => handleSelectVoice(voice.id, voice.name)}
+                          onClick={() =>
+                            handleSelectVoice(voice.id, voice.name)
+                          }
                           className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                             isSelected
                               ? "bg-primary/5 border-primary shadow-xs"
@@ -470,7 +482,9 @@ export default function UploadPage() {
                                 <span className="w-1 bg-primary h-full animate-bounce [animation-delay:0.4s]" />
                               </div>
                             ) : (
-                              <Volume2 className={`w-4 h-4 ${isSelected ? "text-primary" : "text-foreground/40"}`} />
+                              <Volume2
+                                className={`w-4 h-4 ${isSelected ? "text-primary" : "text-foreground/40"}`}
+                              />
                             )}
                           </div>
                         </div>
@@ -483,7 +497,8 @@ export default function UploadPage() {
                 {isUploading ? (
                   <div className="bg-[#ffffff] border border-[#e5e1da] rounded-2xl p-6 space-y-4 shadow-xs">
                     <p className="text-xs font-bold uppercase tracking-wider text-primary font-heading flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Processing Document Pipeline...
+                      <Loader2 className="w-4 h-4 animate-spin" /> Processing
+                      Document Pipeline...
                     </p>
                     <div className="space-y-3">
                       {stagesInfo.map((st, i) => {
@@ -499,8 +514,8 @@ export default function UploadPage() {
                               isCurrent
                                 ? "bg-primary/5 border-primary/40 text-foreground"
                                 : isDone
-                                ? "bg-emerald-500/5 border-emerald-500/30 text-foreground"
-                                : "bg-[#faf8f5] border-[#e5e1da] text-foreground/40"
+                                  ? "bg-emerald-500/5 border-emerald-500/30 text-foreground"
+                                  : "bg-[#faf8f5] border-[#e5e1da] text-foreground/40"
                             }`}
                           >
                             {isDone ? (
@@ -514,7 +529,9 @@ export default function UploadPage() {
                             )}
                             <div>
                               <p className="font-bold text-xs">{st.title}</p>
-                              <p className="text-[11px] text-foreground/60">{st.desc}</p>
+                              <p className="text-[11px] text-foreground/60">
+                                {st.desc}
+                              </p>
                             </div>
                           </div>
                         );
@@ -533,7 +550,6 @@ export default function UploadPage() {
               </motion.div>
             )}
           </form>
-
         </div>
       </main>
     </div>

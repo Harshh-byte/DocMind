@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import * as Icons from "lucide-react";
 import {
-  FileText,
-  Loader2,
   Search,
   WandSparkles,
   Headphones,
@@ -12,7 +10,6 @@ import {
   BookOpen,
   HelpCircle,
   ArrowRight,
-  Zap,
 } from "lucide-react";
 import { getSupabaseClient } from "@/lib/db/supabase";
 import { useAuth } from "@clerk/nextjs";
@@ -118,12 +115,16 @@ export default function StudioPage() {
         const { data, error } = await supabaseClient
           .from("documents")
           .select("*")
-          .eq("user_id", userId)
-          .order("created_at", { ascending: false });
+          .eq("user_id", userId);
 
         if (error) {
-          console.error("Failed to load documents:", error);
-          toast.error("Failed to load document library.");
+          console.warn("Documents fetch info:", error);
+          if (
+            error.message &&
+            !error.message.toLowerCase().includes("failed to fetch")
+          ) {
+            toast.error(error.message);
+          }
         } else if (data) {
           setDocs(
             data.map((d: any) => ({
@@ -136,7 +137,7 @@ export default function StudioPage() {
               text: d.text,
               summary: d.summary,
               tags: d.tags,
-            }))
+            })),
           );
         }
       } catch (err) {
@@ -150,7 +151,7 @@ export default function StudioPage() {
   }, [userId, isLoaded, getToken]);
 
   const filteredDocs = docs.filter((d) =>
-    d.name.toLowerCase().includes(search.toLowerCase())
+    d.name.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -159,35 +160,69 @@ export default function StudioPage() {
 
       <main className="flex-1 flex flex-col min-w-0 relative z-10 pb-10">
         <div className="p-5 md:p-10 max-w-6xl w-full mx-auto space-y-8 mt-14 md:mt-0">
-          
           {/* Header */}
           <div className="bg-[#ffffff] border border-[#e5e1da] rounded-3xl p-6 md:p-8 shadow-xs space-y-2">
             <span className="px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-700 border border-violet-500/20 inline-flex items-center gap-1.5">
-              <WandSparkles className="w-3.5 h-3.5 text-violet-600" /> Multi-Modal AI Synthesis Suite
+              <WandSparkles className="w-3.5 h-3.5 text-violet-600" />{" "}
+              Multi-Modal AI Synthesis Suite
             </span>
             <h1 className="text-2xl md:text-4xl font-heading font-black tracking-tight text-foreground">
               Studio Workspace
             </h1>
             <p className="text-sm text-foreground/70 font-medium">
-              Select a document to enter the AI Studio where podcasts, visual mind maps, flashcards, and quizzes are generated automatically.
+              Select a document to enter the AI Studio where podcasts, visual
+              mind maps, flashcards, and quizzes are generated automatically.
             </p>
           </div>
 
           {/* Studio Capabilities Banner */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
             {[
-              { icon: Headphones, title: "AI Podcasts", desc: "Two-speaker audio summaries", color: "text-indigo-600", bg: "bg-indigo-50" },
-              { icon: Network, title: "Mind Maps", desc: "Interactive graph nodes", color: "text-violet-600", bg: "bg-violet-50" },
-              { icon: BookOpen, title: "Flashcards", desc: "3D interactive flip cards", color: "text-emerald-600", bg: "bg-emerald-50" },
-              { icon: HelpCircle, title: "Practice Quizzes", desc: "Scored Q&A practice tests", color: "text-amber-600", bg: "bg-amber-50" },
+              {
+                icon: Headphones,
+                title: "AI Podcasts",
+                desc: "Two-speaker audio summaries",
+                color: "text-indigo-600",
+                bg: "bg-indigo-50",
+              },
+              {
+                icon: Network,
+                title: "Mind Maps",
+                desc: "Interactive graph nodes",
+                color: "text-violet-600",
+                bg: "bg-violet-50",
+              },
+              {
+                icon: BookOpen,
+                title: "Flashcards",
+                desc: "3D interactive flip cards",
+                color: "text-emerald-600",
+                bg: "bg-emerald-50",
+              },
+              {
+                icon: HelpCircle,
+                title: "Practice Quizzes",
+                desc: "Scored Q&A practice tests",
+                color: "text-amber-600",
+                bg: "bg-amber-50",
+              },
             ].map((cap, i) => (
-              <div key={i} className="p-4 bg-[#ffffff] border border-[#e5e1da] rounded-2xl shadow-xs flex flex-col justify-between space-y-2">
-                <div className={`w-9 h-9 rounded-xl ${cap.bg} flex items-center justify-center ${cap.color}`}>
+              <div
+                key={i}
+                className="p-4 bg-[#ffffff] border border-[#e5e1da] rounded-2xl shadow-xs flex flex-col justify-between space-y-2"
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl ${cap.bg} flex items-center justify-center ${cap.color}`}
+                >
                   <cap.icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="font-heading font-bold text-xs text-foreground">{cap.title}</h4>
-                  <p className="text-[10px] text-foreground/50 font-medium">{cap.desc}</p>
+                  <h4 className="font-heading font-bold text-xs text-foreground">
+                    {cap.title}
+                  </h4>
+                  <p className="text-[10px] text-foreground/50 font-medium">
+                    {cap.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -211,7 +246,10 @@ export default function StudioPage() {
             {isLoadingDocs ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-28 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-28 rounded-2xl bg-white border border-[#e5e1da] p-5 animate-pulse"
+                  />
                 ))}
               </div>
             ) : filteredDocs.length === 0 ? (
@@ -223,7 +261,8 @@ export default function StudioPage() {
                   No Documents Ready for Studio
                 </h3>
                 <p className="text-xs text-foreground/60 font-medium">
-                  Upload a PDF document to generate audio podcasts and study sets.
+                  Upload a PDF document to generate audio podcasts and study
+                  sets.
                 </p>
               </div>
             ) : (
@@ -247,7 +286,9 @@ export default function StudioPage() {
                           <p className="text-xs text-foreground/50 font-medium flex items-center gap-2 mt-0.5">
                             <span>{doc.size}</span>
                             <span>•</span>
-                            <span className="text-violet-600 font-bold">Studio Ready</span>
+                            <span className="text-violet-600 font-bold">
+                              Studio Ready
+                            </span>
                           </p>
                         </div>
                       </div>
